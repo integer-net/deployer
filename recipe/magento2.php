@@ -2,6 +2,7 @@
 namespace Deployer;
 
 require_once __DIR__ . '/common.php';
+require_once __DIR__ . '/../contrib/cachetool.php';
 
 
 use Deployer\Exception\GracefulShutdownException;
@@ -285,13 +286,6 @@ task('build:remove-generated', function() {
     run('rm -rf generated/*');
 });
 
-desc('Clears the opcache, cache tool required.');
-task('cache:clear:opcache', function() {
-    if ($fpmSocket = get('fpm_socket', '')) {
-        run('{{bin/php}} -f {{cacheToolPath}} opcache:reset --fcgi '.$fpmSocket);
-    }
-});
-
 desc('Builds an artifact.');
 task('artifact:build', function () {
     if(currentHost()->get('local')) {
@@ -333,7 +327,7 @@ task('artifact:finish', function() {
         throw new GracefulShutdownException("You can only deploy to a non localhost");
     } else {
         invoke('magento:cache:flush');
-        invoke('cache:clear:opcache');
+        invoke('cachetool:clear:opcache');
         invoke('deploy:cleanup');
         invoke('deploy:unlock');
     }
