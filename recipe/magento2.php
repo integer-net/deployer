@@ -97,16 +97,18 @@ set('clear_paths', [
     'var/view_preprocessed/*'
 ]);
 
+set('bin/magento', '{{release_or_current_path}}/bin/magento');
+
 set('magento_version', function () {
     // detect version
-    $versionOutput = run('{{bin/php}} {{release_or_current_path}}/bin/magento --version');
+    $versionOutput = run('{{bin/php}} {{bin/magento}} --version');
     preg_match('/(\d+\.?)+(-p\d+)?$/', $versionOutput, $matches);
     return $matches[0] ?? '2.0';
 });
 
 set('maintenance_mode_status_active', function () {
     // detect maintenance mode active
-    $maintenanceModeStatusOutput = run("{{bin/php}} {{release_or_current_path}}/bin/magento maintenance:status");
+    $maintenanceModeStatusOutput = run("{{bin/php}} {{bin/magento}} maintenance:status");
     return strpos($maintenanceModeStatusOutput, MAINTENANCE_MODE_ACTIVE_OUTPUT_MSG) !== false;
 });
 
@@ -116,8 +118,7 @@ set('enable_zerodowntime', true);
 // Tasks
 desc('Compiles magento di');
 task('magento:compile', function () {
-    run('cd {{release_or_current_path}} && {{bin/composer}} dump-autoload -o');
-    run("{{bin/php}} {{release_or_current_path}}/bin/magento setup:di:compile");
+    run("{{bin/php}} {{bin/magento}} setup:di:compile");
     run('cd {{release_or_current_path}} && {{bin/composer}} dump-autoload -o');
 });
 
@@ -184,7 +185,7 @@ function magentoDeployAssetsSplit(string $area)
     foreach ($themes as $theme) {
         $languages = parse($themesConfig[$theme] ?? $defaultLanguages);
 
-        run("{{bin/php}} {{release_or_current_path}}/bin/magento setup:static-content:deploy --area=$staticContentArea --content-version={{content_version}} {{static_deploy_options}} $languages -t $theme -j {{static_content_jobs}}");
+        run("{{bin/php}} {{bin/magento}} setup:static-content:deploy --area=$staticContentArea --content-version={{content_version}} {{static_deploy_options}} $languages -t $theme -j {{static_content_jobs}}");
     }
 }
 
@@ -220,7 +221,7 @@ task('magento:config:import', function () {
         $configImportNeeded = true;
     } else {
         try {
-            run('{{bin/php}} {{release_or_current_path}}/bin/magento app:config:status');
+            run('{{bin/php}} {{bin/magento}} app:config:status');
         } catch (RunException $e) {
             if ($e->getExitCode() == CONFIG_IMPORT_NEEDED_EXIT_CODE) {
                 $configImportNeeded = true;
@@ -235,7 +236,7 @@ task('magento:config:import', function () {
             invoke('magento:maintenance:enable');
         }
 
-        run('{{bin/php}} {{release_or_current_path}}/bin/magento app:config:import --no-interaction');
+        run('{{bin/php}} {{bin/magento}} app:config:import --no-interaction');
 
         if (get('enable_zerodowntime') && !get('maintenance_mode_status_active')) {
             invoke('magento:maintenance:disable');
@@ -248,7 +249,7 @@ task('magento:upgrade:db', function () {
     $databaseUpgradeNeeded = false;
 
     try {
-        run('{{bin/php}} {{release_or_current_path}}/bin/magento setup:db:status');
+        run('{{bin/php}} {{bin/magento}} setup:db:status');
     } catch (RunException $e) {
         if ($e->getExitCode() == DB_UPDATE_NEEDED_EXIT_CODE) {
             $databaseUpgradeNeeded = true;
@@ -262,7 +263,7 @@ task('magento:upgrade:db', function () {
             invoke('magento:maintenance:enable');
         }
 
-        run("{{bin/php}} {{release_or_current_path}}/bin/magento setup:upgrade --keep-generated --no-interaction");
+        run("{{bin/php}} {{bin/magento}} setup:upgrade --keep-generated --no-interaction");
 
         if (get('enable_zerodowntime') && !get('maintenance_mode_status_active')) {
             invoke('magento:maintenance:disable');
@@ -272,7 +273,7 @@ task('magento:upgrade:db', function () {
 
 desc('Flushes Magento Cache');
 task('magento:cache:flush', function () {
-    run("{{bin/php}} {{release_or_current_path}}/bin/magento cache:flush");
+    run("{{bin/php}} {{bin/magento}} cache:flush");
 });
 
 desc('Magento2 deployment operations');
