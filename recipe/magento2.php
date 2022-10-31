@@ -17,7 +17,7 @@ add('recipes', ['magento2']);
 // Configuration
 
 // By default setup:static-content:deploy uses `en_US`.
-// To change that, simply put `set('static_content_locales', 'en_US de_DE');`
+// To change that, put `set('static_content_locales', 'en_US de_DE');`
 // in you deployer script.
 set('static_content_locales', 'en_US');
 
@@ -331,7 +331,7 @@ desc('Packages all relevant files in an artifact.');
 task('artifact:package', function() {
     if (!test('[ -f {{artifact_excludes_file}} ]')) {
         throw new GracefulShutdownException(
-            "No artifact excludes file provided, provide one at artivacts/excludes or change location"
+            "No artifact excludes file provided, provide one at artifacts/excludes or change location"
         );
     }
     run('{{bin/tar}} --exclude-from={{artifact_excludes_file}} -czf {{artifact_path}} .');
