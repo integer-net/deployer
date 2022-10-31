@@ -178,7 +178,7 @@ function magentoDeployAssetsSplit(string $area)
     if ($useDefaultLanguages) {
         $themes = implode('-t ', $themes);
 
-        run("{{bin/php}} {{release_or_current_path}}/bin/magento setup:static-content:deploy --area=$staticContentArea --content-version={{content_version}} {{static_deploy_options}} $defaultLanguages $themes -j {{static_content_jobs}}");
+        run("{{bin/php}} {{bin/magento}} setup:static-content:deploy --area=$staticContentArea --content-version={{content_version}} {{static_deploy_options}} $defaultLanguages $themes -j {{static_content_jobs}}");
         return;
     }
 
