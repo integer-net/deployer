@@ -354,4 +354,5 @@ task('artifact:deploy', function()  {
         invoke('artifact:finish');
     }
 });
+fail('artifact:deploy', 'deploy:failed');
 
