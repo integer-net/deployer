@@ -123,7 +123,7 @@ set('enable_zerodowntime', true);
 desc('Compiles magento di');
 task('magento:compile', function () {
     run("{{bin/php}} {{release_or_current_path}}/{{bin/magento}} setup:di:compile");
-    run('cd {{release_or_current_path}} && {{bin/composer}} dump-autoload -o');
+    run('cd {{release_or_current_path}}/{{magento_dir}} && {{bin/composer}} dump-autoload -o');
 });
 
 desc('Deploys assets');
