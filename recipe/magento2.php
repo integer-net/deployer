@@ -101,6 +101,9 @@ set('clear_paths', [
     '{{magento_dir}}/var/view_preprocessed/*'
 ]);
 
+add('shared_files', get('additional_shared_files') ?? []);
+add('shared_dirs', get('additional_shared_dirs') ?? []);
+
 set('bin/magento', '{{magento_dir}}/bin/magento');
 
 set('magento_version', function () {
@@ -366,6 +369,18 @@ task('build:remove-generated', function() {
     run('rm -rf generated/*');
 });
 
+desc('Prepare local artifact build');
+task('build:prepare', function() {
+    if(! currentHost()->get('local')) {
+        {
+            throw new GracefulShutdownException("Artifact can only be built locally, you provided a non local host");
+        }
+    }
+    set('deploy_path', '.');
+    set('release_path', '.');
+    set('current_path', '.');
+});
+
 desc('Clears the opcache, cache tool required.');
 task('cache:clear:opcache', function() {
     if ($fpmSocket = get('fpm_socket', '')) {
@@ -374,66 +389,59 @@ task('cache:clear:opcache', function() {
 });
 
 desc('Builds an artifact.');
-task('artifact:build', function () {
-    if(currentHost()->get('local')) {
-        set('deploy_path', '.');
-        set('release_path', '.');
-        set('current_path', '.');
-        invoke('build:prepare-env');
-        invoke('build:remove-generated');
-        invoke('deploy:vendors');
-        invoke('magento:compile');
-        invoke('magento:deploy:assets');
-        invoke('artifact:package');
-    } else {
-        throw new GracefulShutdownException("Artifact can only be built locally, you provided a non local host");
-    }
-});
+task(
+    'artifact:build',
+    [
+        'build:prepare',
+        'build:prepare-env',
+        'build:remove-generated',
+        'deploy:vendors',
+        'magento:compile',
+        'magento:deploy:assets',
+        'artifact:package',
+    ]
+);
 
 desc('Prepares an artifact on the target server');
-task('artifact:prepare', function(){
-    if(currentHost()->get('local')) {
-        throw new GracefulShutdownException("You can only deploy to a non localhost");
-    } else {
-        add('shared_files', get('additional_shared_files') ?? []);
-        add('shared_dirs', get('additional_shared_dirs') ?? []);
-        invoke('deploy:info');
-        invoke('deploy:setup');
-        invoke('deploy:lock');
-        invoke('deploy:release');
-        invoke('artifact:upload');
-        invoke('artifact:extract');
-        invoke('deploy:shared');
-        invoke('deploy:writable');
-    }
-});
+task(
+    'artifact:prepare',
+    [
+        'deploy:info',
+        'deploy:setup',
+        'deploy:lock',
+        'deploy:release',
+        'artifact:upload',
+        'artifact:extract',
+        'deploy:shared',
+        'deploy:writable',
+    ]
+);
 
 desc('Executes the tasks after artifact is released');
-task('artifact:finish', function() {
-    if(currentHost()->get('local')) {
-        throw new GracefulShutdownException("You can only deploy to a non localhost");
-    } else {
-        invoke('magento:cache:flush');
-        invoke('cache:clear:opcache');
-        invoke('deploy:cleanup');
-        invoke('deploy:unlock');
-    }
-});
+task(
+    'artifact:finish',
+    [
+        'magento:cache:flush',
+        'cache:clear:opcache',
+        'deploy:cleanup',
+        'deploy:unlock',
+    ]
+);
 
 desc('Actually releases the artifact deployment');
-task('artifact:deploy', function()  {
+task(
+    'artifact:deploy',
+    [
+        'artifact:prepare',
 
-    if(currentHost()->get('local')) {
-        throw new GracefulShutdownException("You can only deploy to a non localhost");
-    } else {
-        invoke('artifact:prepare');
+        'magento:upgrade:db',
+        'magento:config:import',
+        'deploy:symlink',
 
-        invoke('magento:upgrade:db');
-        invoke('magento:config:import');
-        invoke('deploy:symlink');
+        'artifact:finish',
 
-        invoke('artifact:finish');
-    }
-});
+    ]
+);
+
 fail('artifact:deploy', 'deploy:failed');
 
