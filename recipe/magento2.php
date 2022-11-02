@@ -2,6 +2,7 @@
 namespace Deployer;
 
 require_once __DIR__ . '/common.php';
+require_once __DIR__ . '/../contrib/cachetool.php';
 
 use Deployer\Exception\ConfigurationException;
 use Deployer\Exception\GracefulShutdownException;
@@ -381,13 +382,6 @@ task('build:prepare', function() {
     set('current_path', '.');
 });
 
-desc('Clears the opcache, cache tool required.');
-task('cache:clear:opcache', function() {
-    if ($fpmSocket = get('fpm_socket', '')) {
-        run('{{bin/php}} -f {{cacheToolPath}} opcache:reset --fcgi '.$fpmSocket);
-    }
-});
-
 desc('Builds an artifact.');
 task(
     'artifact:build',
@@ -422,7 +416,7 @@ task(
     'artifact:finish',
     [
         'magento:cache:flush',
-        'cache:clear:opcache',
+        'cachetool:clear:opcache',
         'deploy:cleanup',
         'deploy:unlock',
     ]
