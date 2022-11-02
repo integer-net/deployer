@@ -303,8 +303,6 @@ task('deploy', [
     'deploy:publish',
 ]);
 
-after('deploy:failed', 'magento:maintenance:disable');
-
 // artifact deployment section
 // settings section
 set('artifact_file', 'artifact.tar.gz');
