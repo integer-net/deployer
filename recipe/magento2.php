@@ -102,8 +102,13 @@ set('clear_paths', [
     '{{magento_dir}}/var/view_preprocessed/*'
 ]);
 
-add('shared_files', get('additional_shared_files') ?? []);
-add('shared_dirs', get('additional_shared_dirs') ?? []);
+// Array of shared files that will be added to the default shared_files without overriding
+set('additional_shared_files', []);
+// Array of shared directories that will be added to the default shared_dirs without overriding
+set('additional_shared_dirs', []);
+
+add('shared_files', get('additional_shared_files'));
+add('shared_dirs', get('additional_shared_dirs'));
 
 set('bin/magento', '{{magento_dir}}/bin/magento');
 
