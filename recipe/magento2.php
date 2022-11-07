@@ -102,9 +102,6 @@ set('clear_paths', [
     '{{magento_dir}}/var/view_preprocessed/*'
 ]);
 
-add('shared_files', get('additional_shared_files') ?? []);
-add('shared_dirs', get('additional_shared_dirs') ?? []);
-
 set('bin/magento', '{{magento_dir}}/bin/magento');
 
 set('magento_version', function () {
@@ -328,10 +325,6 @@ set('bin/tar', function () {
     }
 });
 
-set('cacheToolPath', function() {
-    return get('cacheTool', '{{current_path}}/bin/cachetool');
-});
-
 // tasks section
 desc('Packages all relevant files in an artifact.');
 task('artifact:package', function() {
@@ -352,17 +345,6 @@ desc('Extracts artifact in release path.');
 task('artifact:extract', function () {
     run('{{bin/tar}} -xzpf {{release_path}}/{{artifact_file}} -C {{release_path}}');
     run('rm -rf {{release_path}}/{{artifact_file}}');
-});
-
-desc('Provides env.php for build.');
-task('build:prepare-env', function() {
-    $deployEnv = get('deploy_env','app/etc/deploy.php');
-    if (!test('[ -f ./'.$deployEnv.' ]')) {
-        throw new GracefulShutdownException(
-            "No deploy env provided, provide one at app/etc/deploy.php or change location"
-        );
-    }
-    run ('cp '.$deployEnv.' app/etc/env.php');
 });
 
 desc('Clears generated files prior to building.');
@@ -387,7 +369,6 @@ task(
     'artifact:build',
     [
         'build:prepare',
-        'build:prepare-env',
         'build:remove-generated',
         'deploy:vendors',
         'magento:compile',
@@ -395,6 +376,19 @@ task(
         'artifact:package',
     ]
 );
+
+// Array of shared files that will be added to the default shared_files without overriding
+set('additional_shared_files', []);
+// Array of shared directories that will be added to the default shared_dirs without overriding
+set('additional_shared_dirs', []);
+
+
+desc('Adds additional files and dirs to the list of shared files and dirs');
+task('deploy:additional-shared', function () {
+    add('shared_files', get('additional_shared_files'));
+    add('shared_dirs', get('additional_shared_dirs'));
+});
+
 
 desc('Prepares an artifact on the target server');
 task(
@@ -406,6 +400,7 @@ task(
         'deploy:release',
         'artifact:upload',
         'artifact:extract',
+        'deploy:additional-shared',
         'deploy:shared',
         'deploy:writable',
     ]
@@ -427,15 +422,11 @@ task(
     'artifact:deploy',
     [
         'artifact:prepare',
-
         'magento:upgrade:db',
         'magento:config:import',
         'deploy:symlink',
-
-        'artifact:finish',
-
+        'artifact:finish'
     ]
 );
 
 fail('artifact:deploy', 'deploy:failed');
-
