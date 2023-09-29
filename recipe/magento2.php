@@ -460,8 +460,8 @@ desc('Executes the tasks after artifact is released');
 task(
     'artifact:finish',
     [
-        'magento:cache:flush',
         'cachetool:clear:opcache',
+        'magento:cache:flush',
         'deploy:cleanup',
         'deploy:unlock',
     ]
